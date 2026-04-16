@@ -1,34 +1,36 @@
 import torch
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics import confusion_matrix
-import torchvision.transforms as t
+import numpy as np
+from sklearn.metrics import confusion_matrix, roc_curve, auc
 
-def evaluate(model, loader, device, exp_name, epoch, plot_visuals=False):
+
+def evaluate(model, loader, device):
+    """
+    Evalúa el modelo sobre un DataLoader.
+
+    Devuelve un diccionario con:
+        - accuracy
+        - all_preds:   lista de predicciones (clase argmax)
+        - all_labels:  lista de etiquetas reales
+        - all_probs:   lista de probabilidades de la clase positiva (para ROC)
+        - misclassified: lista de tuplas (imagen_tensor, pred, label) para visualización
+    """
     model.eval()
-    
+
     correct = 0
     total = 0
-    
+
     all_preds = []
     all_labels = []
-    
-    misclassified_imgs = []
-    misclassified_preds = []
-    misclassified_labels = []
-
-    # Transformación inversa para visualizar imágenes normalizadas
-    inv_normalize = t.Normalize(
-        mean=[-0.485/0.229, -0.456/0.224, -0.406/0.225],
-        std=[1/0.229, 1/0.224, 1/0.225]
-    )
+    all_probs = []
+    misclassified = []   # (img_tensor_cpu, pred, true_label)
 
     with torch.no_grad():
-        for images, labels, names in loader:
+        for images, labels, _ in loader:
             images_dev = images.to(device)
             labels_dev = labels.to(device)
 
             outputs = model(images_dev)
+            probs = torch.softmax(outputs, dim=1)[:, 1]   # P(clase positiva)
             preds = outputs.argmax(1)
 
             correct += (preds == labels_dev).sum().item()
@@ -36,60 +38,23 @@ def evaluate(model, loader, device, exp_name, epoch, plot_visuals=False):
 
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels_dev.cpu().numpy())
+            all_probs.extend(probs.cpu().numpy())
 
-            # Buscar fallos si nos toca graficar
-            if plot_visuals:
-                mismatches = preds != labels_dev
-                if mismatches.any():
-                    mismatch_idx = mismatches.nonzero(as_tuple=True)[0]
-                    for idx in mismatch_idx:
-                        if len(misclassified_imgs) < 12: # Guardamos un máximo de 12 para la cuadrícula
-                            img_cpu = inv_normalize(images[idx]).cpu()
-                            img_cpu = torch.clamp(img_cpu, 0, 1) # Asegurar rango [0,1] para matplotlib
-                            misclassified_imgs.append(img_cpu)
-                            misclassified_preds.append(preds[idx].item())
-                            misclassified_labels.append(labels_dev[idx].item())
+            # Guardar imágenes mal clasificadas (máximo 12)
+            if len(misclassified) < 12:
+                mismatches = (preds != labels_dev).nonzero(as_tuple=True)[0]
+                for idx in mismatches:
+                    if len(misclassified) < 12:
+                        misclassified.append((
+                            images[idx].cpu(),
+                            preds[idx].item(),
+                            labels_dev[idx].item()
+                        ))
 
-    accuracy = correct / total
-
-    # Generar gráficos solo cuando se solicita (ej. última época)
-    if plot_visuals:
-        # Matriz de Confusión
-        cm = confusion_matrix(all_labels, all_preds)
-        plt.figure(figsize=(6, 5))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
-        plt.xlabel('Predicción')
-        plt.ylabel('Real')
-        plt.title(f'Confusion Matrix - {exp_name}')
-        plt.tight_layout()
-        plt.savefig(f'cm_{exp_name}.png')
-        plt.close()
-
-        # Imágenes mal clasificadas
-        if misclassified_imgs:
-            num_imgs = min(len(misclassified_imgs), 12)
-            cols = 4
-            rows = (num_imgs + cols - 1) // cols
-            fig, axes = plt.subplots(rows, cols, figsize=(12, 3 * rows))
-
-            import numpy as np
-            if num_imgs == 1:
-                axes = np.array([axes]) # Forzar array si solo hay uno
-            else:
-                axes = axes.flatten() # Convertir matriz a lista plana            
-
-
-            for i in range(num_imgs):
-                img = misclassified_imgs[i].permute(1, 2, 0).numpy()
-                axes[i].imshow(img)
-                axes[i].set_title(f"Pred: {misclassified_preds[i]} | True: {misclassified_labels[i]}")
-                axes[i].axis('off')
-                
-            for j in range(num_imgs, len(axes)):
-                axes[j].axis('off')
-                
-            plt.tight_layout()
-            plt.savefig(f'errors_{exp_name}.png')
-            plt.close()
-
-    return accuracy
+    return {
+        "accuracy":      correct / total,
+        "all_preds":     np.array(all_preds),
+        "all_labels":    np.array(all_labels),
+        "all_probs":     np.array(all_probs),
+        "misclassified": misclassified,
+    }

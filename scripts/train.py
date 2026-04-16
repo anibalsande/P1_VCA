@@ -4,7 +4,7 @@ def train_epoch(model, loader, optimizer, criterion, device):
     model.train()
     running_loss = 0.0
 
-    # Añadimos '_' para ignorar el nombre de la imagen durante el entreno
+    # Añadimos '_' para ignorar el nombre de la imagen durante el entrenamiento
     for images, labels, _ in loader:
         images = images.to(device)
         labels = labels.to(device)
