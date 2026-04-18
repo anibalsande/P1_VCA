@@ -4,16 +4,6 @@ from sklearn.metrics import confusion_matrix, roc_curve, auc
 
 
 def evaluate(model, loader, device):
-    """
-    Evalúa el modelo sobre un DataLoader.
-
-    Devuelve un diccionario con:
-        - accuracy
-        - all_preds:   lista de predicciones (clase argmax)
-        - all_labels:  lista de etiquetas reales
-        - all_probs:   lista de probabilidades de la clase positiva (para ROC)
-        - misclassified: lista de tuplas (imagen_tensor, pred, label) para visualización
-    """
     model.eval()
 
     correct = 0

@@ -17,7 +17,7 @@ from evaluate import evaluate
 from plots import *
 
 # Configuración general
-SEED       = 42
+SEED       = 12
 EPOCHS     = 50
 BATCH_SIZE = 32
 OUTPUT_DIR = '../results'
@@ -65,6 +65,9 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
     exp_name = f"{task_name}_pre_{pretrained}_aug_{augmentation}"
     print(f"\nEXPERIMENTO: {exp_name}")
 
+    exp_dir = os.path.join(OUTPUT_DIR, exp_name)
+    os.makedirs(exp_dir, exist_ok=True)
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Dataloaders
@@ -73,7 +76,7 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
 
     model     = get_resnet18(num_classes=2, pretrained=pretrained).to(device)
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.01) # AdamW con weight decay para mejor generalización
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5, weight_decay=0.01) # AdamW con weight decay para mejor generalización
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=15, gamma=0.5)
     
     # Historial de métricas por epoch
@@ -82,48 +85,42 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
     # Bucle de entrenamiento
     for epoch in range(EPOCHS):
         train_loss = train_epoch(model, train_loader, optimizer, criterion, device)
-        
-        # Evaluar en Train y Test cada epoch para monitorear progreso
         train_metrics = evaluate(model, train_loader, device)
-        test_metrics  = evaluate(model, test_loader, device)
         
         history['train_loss'].append(train_loss)
         history['train_acc'].append(train_metrics['accuracy'])
-        history['test_acc'].append(test_metrics['accuracy'])
 
-        print(f"Epoch {epoch+1}/{EPOCHS} | Train Loss: {train_loss:.4f} | "
-              f"Train Acc: {train_metrics['accuracy']:.4f} | Test Acc: {test_metrics['accuracy']:.4f}")
-
+        print(f"Epoch {epoch+1}/{EPOCHS} | Train Loss: {train_loss:.4f} | Train Acc: {train_metrics['accuracy']:.4f}")
         scheduler.step()
+    
     # Guardado
     save_model(model, exp_name)
 
-    print(f"Generando gráficos para {exp_name}...")
-    plot_loss(history['train_loss'], exp_name, OUTPUT_DIR) # Puedes mejorar esto luego
-    plot_confusion_matrix(test_metrics["all_labels"], test_metrics["all_preds"], exp_name, OUTPUT_DIR)
-    plot_roc_curve(test_metrics["all_labels"], test_metrics["all_probs"], exp_name, OUTPUT_DIR)
-    plot_misclassified(test_metrics["misclassified"], exp_name, OUTPUT_DIR)
+    # Gráfica de entrenamiento
+    plot_training_curves(history['train_loss'], history['train_acc'], exp_name, exp_dir)
+    
+    # Evaluación final en test
+    print("\nEvaluación en Test:")
+    test_metrics = evaluate(model, test_loader, device)
+    
+    generate_evaluation_plots(test_metrics, exp_name, exp_dir)
 
     all_results[exp_name] = {
         "train_acc": train_metrics["accuracy"],
         "test_acc":  test_metrics["accuracy"]
     }
 
-def run_all_experiments(csv_path, img_dir, task_name, all_results,
-                        show_samples=False):
+
+def run_all_experiments(csv_path, img_dir, task_name, all_results):
     configurations = [
-        (False, False),
-        (False, True),
-        (True, False),
+        #(False, False),
+        #(False, True),
+        #(True, False),
         (True, True)
     ]
 
     train_idx, test_idx = get_stratified_indexes(csv_path, test_size=0.2, seed=SEED)
     
-    if show_samples:
-        raw_dataset = PortDataset(img_dir, csv_path, transform=base_transform)
-        visualize_samples(raw_dataset, num_samples=5)
-
     for pretrained, augmentation in configurations:
         t_train = aug_transform if augmentation else base_transform
  
@@ -141,6 +138,7 @@ def run_all_experiments(csv_path, img_dir, task_name, all_results,
             all_results=all_results,
         )
 
+
 def main():
     print(f"\nTAREA 2: Clasificación Ship / No-ship")
     ship_results = {}
@@ -150,7 +148,6 @@ def main():
         img_dir="../P1-Material/images",
         task_name="ship",
         all_results=ship_results,
-        show_samples=True,          # Solo muestra muestras una vez
     )
  
     # Gráfico resumen para los experimentos de Ship
@@ -164,7 +161,6 @@ def main():
         img_dir="../P1-Material/images",
         task_name="docked",
         all_results=docked_results,
-        show_samples=False,
     )
     
     plot_accuracy_summary(docked_results, OUTPUT_DIR, task_name="docked")

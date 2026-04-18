@@ -27,7 +27,7 @@ def plot_loss(losses, exp_name, output_dir):
     plt.title(f'Training Loss — {exp_name}')
     plt.grid(True, which="both", ls="--")
     plt.tight_layout()
-    path = os.path.join(output_dir, f'loss_{exp_name}.png')
+    path = os.path.join(output_dir, 'loss.png')
     plt.savefig(path)
     plt.close()
     print(f"Pérdidas guardadas en {path}")
@@ -45,7 +45,7 @@ def plot_confusion_matrix(all_labels, all_preds, exp_name, output_dir, class_nam
     plt.ylabel('Real')
     plt.title(f'Confusion Matrix — {exp_name}')
     plt.tight_layout()
-    path = os.path.join(output_dir, f'cm_{exp_name}.png')
+    path = os.path.join(output_dir, f'confusion_matrix.png')
     plt.savefig(path)
     plt.close()
     print(f"Matriz de confusión guardada en {path}")
@@ -66,17 +66,12 @@ def plot_roc_curve(all_labels, all_probs, exp_name, output_dir):
     plt.title(f'ROC Curve — {exp_name}')
     plt.legend(loc="lower right")
     plt.tight_layout()
-    path = os.path.join(output_dir, f'roc_{exp_name}.png')
+    path = os.path.join(output_dir, f'roc_curve.png')
     plt.savefig(path)
     plt.close()
     print(f"Curva ROC guardada en {path} (AUC={roc_auc:.3f})")
-    return roc_auc
-
 
 def plot_misclassified(misclassified, exp_name, output_dir):
-    """
-    misclassified: lista de tuplas (img_tensor_cpu, pred, true_label)
-    """
     if not misclassified:
         print(f"  [plot] Sin errores que mostrar para {exp_name}")
         return
@@ -87,7 +82,6 @@ def plot_misclassified(misclassified, exp_name, output_dir):
 
     fig, axes = plt.subplots(rows, cols, figsize=(12, 3 * rows))
 
-    # Normalizar axes a array plano independientemente de la forma
     axes = np.array(axes).reshape(-1)
 
     for i in range(num_imgs):
@@ -102,12 +96,42 @@ def plot_misclassified(misclassified, exp_name, output_dir):
 
     plt.suptitle(f'Errores de clasificación — {exp_name}', fontsize=11)
     plt.tight_layout()
-    path = os.path.join(output_dir, f'errors_{exp_name}.png')
+    path = os.path.join(output_dir, f'errors.png')
     plt.savefig(path)
     plt.close()
     print(f"Errores guardados en {path}")
 
+def plot_training_curves(train_losses, train_accs, exp_name, output_dir):
+    fig, ax1 = plt.subplots(figsize=(10, 5))
 
+    color = 'tab:red'
+    ax1.set_xlabel('Epochs')
+    ax1.set_ylabel('Train Loss (log)', color=color)
+    ax1.plot(range(1, len(train_losses) + 1), train_losses, marker='o', color=color, label='Loss')
+    ax1.tick_params(axis='y', labelcolor=color)
+    ax1.set_yscale('log')
+    ax1.grid(True, which="both", ls="--", alpha=0.5)
+
+    ax2 = ax1.twinx()  
+    color = 'tab:blue'
+    ax2.set_ylabel('Train Accuracy', color=color)
+    ax2.plot(range(1, len(train_accs) + 1), train_accs, marker='s', color=color, label='Accuracy')
+    ax2.tick_params(axis='y', labelcolor=color)
+    ax2.set_ylim([0, 1.05])
+
+    fig.tight_layout()
+    plt.title(f'Training Curves — {exp_name}')
+    path = os.path.join(output_dir, f'training_curves.png')
+    plt.savefig(path)
+    plt.close()
+    print(f"Curvas de entrenamiento guardadas en {path}")
+
+
+def generate_evaluation_plots(metrics, exp_name, output_dir):
+    plot_confusion_matrix(metrics["all_labels"], metrics["all_preds"], exp_name, output_dir)
+    plot_roc_curve(metrics["all_labels"], metrics["all_probs"], exp_name, output_dir)
+    plot_misclassified(metrics["misclassified"], exp_name, output_dir)
+    
 def plot_accuracy_summary(results, output_dir, task_name="general"):
     names = list(results.keys())
     train_accs = [results[n].get("train_acc", 0) for n in names]

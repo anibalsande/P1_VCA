@@ -16,7 +16,8 @@ def train_epoch(model, loader, optimizer, criterion, device):
         loss.backward()
         optimizer.step()
 
-        running_loss += loss.item()
+        batch_size = images.size(0)
+        running_loss += loss.item() * batch_size
 
-    avg_loss = running_loss / len(loader)
+    avg_loss = running_loss / len(loader.dataset)
     return avg_loss
