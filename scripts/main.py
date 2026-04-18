@@ -9,8 +9,9 @@ import matplotlib.pyplot as plt
 
 from dataset import PortDataset
 from transforms import base_transform, aug_transform
-from split import split_indices
+from split import get_stratified_indexes
 from model import get_resnet18
+
 from train import train_epoch
 from evaluate import evaluate
 from plots import *
@@ -18,7 +19,7 @@ from plots import *
 # Configuración general
 SEED       = 42
 EPOCHS     = 50
-BATCH_SIZE = 128
+BATCH_SIZE = 32
 OUTPUT_DIR = '../results'
 MODELS_DIR = os.path.join(OUTPUT_DIR, "models")
 
@@ -74,40 +75,49 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.0001, weight_decay=0.01) # AdamW con weight decay para mejor generalización
 
+    # Historial de métricas por epoch
+    history = {'train_loss': [], 'test_loss': [], 'train_acc': [], 'test_acc': []}
+
     # Bucle de entrenamiento
-    epoch_losses = []
     for epoch in range(EPOCHS):
-        loss = train_epoch(model, train_loader, optimizer, criterion, device)
-        epoch_losses.append(loss)
+        train_loss = train_epoch(model, train_loader, optimizer, criterion, device)
         
-        metrics  = evaluate(model, test_loader, device)
-        print(f"Epoch {epoch+1}/{EPOCHS} | Train Loss: {loss:.4f} | Test Acc: {metrics['accuracy']:.4f}")
+        # Evaluar en Train y Test cada epoch para monitorear progreso
+        train_metrics = evaluate(model, train_loader, device)
+        test_metrics  = evaluate(model, test_loader, device)
+        
+        history['train_loss'].append(train_loss)
+        history['train_acc'].append(train_metrics['accuracy'])
+        history['test_acc'].append(test_metrics['accuracy'])
 
-    # Evaluación final
-    train_metrics = evaluate(model, train_loader, device)
-    test_metrics  = evaluate(model, test_loader,  device)
-
+        print(f"Epoch {epoch+1}/{EPOCHS} | Train Loss: {train_loss:.4f} | "
+              f"Train Acc: {train_metrics['accuracy']:.4f} | Test Acc: {test_metrics['accuracy']:.4f}")
+    
+    # Guardado
     save_model(model, exp_name)
-    all_results[exp_name] = {
-        "train_acc":     train_metrics["accuracy"],
-        "test_acc":      test_metrics["accuracy"],
-        "epoch_losses":  epoch_losses,
-        "test_metrics":  test_metrics,
-    }
 
+    print(f"Generando gráficos para {exp_name}...")
+    plot_loss(history['train_loss'], exp_name, OUTPUT_DIR) # Puedes mejorar esto luego
+    plot_confusion_matrix(test_metrics["all_labels"], test_metrics["all_preds"], exp_name, OUTPUT_DIR)
+    plot_roc_curve(test_metrics["all_labels"], test_metrics["all_probs"], exp_name, OUTPUT_DIR)
+    plot_misclassified(test_metrics["misclassified"], exp_name, OUTPUT_DIR)
+
+    all_results[exp_name] = {
+        "train_acc": train_metrics["accuracy"],
+        "test_acc":  test_metrics["accuracy"]
+    }
 
 def run_all_experiments(csv_path, img_dir, task_name, all_results,
                         show_samples=False):
     configurations = [
-        (False, False),
-        (True, False),
-        (False, True),
+        #(False, False),
+        #(True, False),
+        #(False, True),
         (True, True)
     ]
 
-    df = pd.read_csv(csv_path, sep=";")
-    train_idx, test_idx = split_indices(len(df), train_ratio=0.8, seed=SEED)
-
+    train_idx, test_idx = get_stratified_indexes(csv_path, test_size=0.2, seed=SEED)
+    
     if show_samples:
         raw_dataset = PortDataset(img_dir, csv_path, transform=base_transform)
         visualize_samples(raw_dataset, num_samples=5)
@@ -154,41 +164,44 @@ def generate_all_plots(all_results, class_names=None):
     plot_accuracy_summary(all_results, OUTPUT_DIR)
 
 def main():
-    all_results = {}   # Acumula resultados de todos los experimentos
+    print(f"\nTAREA 2: Clasificación Ship / No-ship")
+    ship_results = {}
  
-    # TAREA 2: Clasificación Ship / No-ship
     run_all_experiments(
         csv_path="../P1-Material/ship.csv",
         img_dir="../P1-Material/images",
         task_name="ship",
-        all_results=all_results,
+        all_results=ship_results,
         show_samples=True,          # Solo muestra muestras una vez
     )
  
+    # Gráfico resumen para los experimentos de Ship
+    plot_accuracy_summary(ship_results, OUTPUT_DIR, task_name="ship")
+
     # TAREA 4 (opcional): Clasificación Docked / Undocked
+    print(f"\nTAREA 4: Clasificación Docked / Undocked")
+    docked_results = {}
     run_all_experiments(
         csv_path="../P1-Material/docked.csv",
         img_dir="../P1-Material/images",
         task_name="docked",
-        all_results=all_results,
+        all_results=docked_results,
         show_samples=False,
     )
- 
-    # Gráficos al final de todo
-    generate_all_plots(all_results)
- 
-    # Resumen por consola
-    print(f"\n{'='*60}")
-    print("RESUMEN FINAL")
-    print(f"{'='*60}")
-    print(f"{'Experimento':<45} {'Train Acc':>10} {'Test Acc':>10}")
-    print("-" * 67)
-    for exp_name, data in all_results.items():
-        print(f"{exp_name:<45} {data['train_acc']:>10.4f} {data['test_acc']:>10.4f}")
- 
+    
+    plot_accuracy_summary(docked_results, OUTPUT_DIR, task_name="docked")
+
+    # Resumen final por consola separado
+    print("\nRESUMEN FINAL - SHIP")
+    for exp, data in ship_results.items():
+        print(f"{exp:<35} Train: {data['train_acc']:.4f} | Test: {data['test_acc']:.4f}")
+        
+    print("\nRESUMEN FINAL - DOCKED")
+    for exp, data in docked_results.items():
+        print(f"{exp:<35} Train: {data['train_acc']:.4f} | Test: {data['test_acc']:.4f}")
+
     print(f"\nModelos guardados en: {MODELS_DIR}/")
-    print(f"Gráficos guardados en: {OUTPUT_DIR}/")
- 
+    print(f"Gráficos guardados en: {OUTPUT_DIR}/") 
  
 if __name__ == "__main__":
     main()

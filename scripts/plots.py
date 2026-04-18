@@ -30,7 +30,7 @@ def plot_loss(losses, exp_name, output_dir):
     path = os.path.join(output_dir, f'loss_{exp_name}.png')
     plt.savefig(path)
     plt.close()
-    print(f"  [plot] Pérdidas guardadas en {path}")
+    print(f"Pérdidas guardadas en {path}")
 
 
 def plot_confusion_matrix(all_labels, all_preds, exp_name, output_dir, class_names=None):
@@ -48,7 +48,7 @@ def plot_confusion_matrix(all_labels, all_preds, exp_name, output_dir, class_nam
     path = os.path.join(output_dir, f'cm_{exp_name}.png')
     plt.savefig(path)
     plt.close()
-    print(f"  [plot] Matriz de confusión guardada en {path}")
+    print(f"Matriz de confusión guardada en {path}")
 
 
 def plot_roc_curve(all_labels, all_probs, exp_name, output_dir):
@@ -69,7 +69,7 @@ def plot_roc_curve(all_labels, all_probs, exp_name, output_dir):
     path = os.path.join(output_dir, f'roc_{exp_name}.png')
     plt.savefig(path)
     plt.close()
-    print(f"  [plot] Curva ROC guardada en {path} (AUC={roc_auc:.3f})")
+    print(f"Curva ROC guardada en {path} (AUC={roc_auc:.3f})")
     return roc_auc
 
 
@@ -105,14 +105,10 @@ def plot_misclassified(misclassified, exp_name, output_dir):
     path = os.path.join(output_dir, f'errors_{exp_name}.png')
     plt.savefig(path)
     plt.close()
-    print(f"  [plot] Errores guardados en {path}")
+    print(f"Errores guardados en {path}")
 
 
-def plot_accuracy_summary(results, output_dir):
-    """
-    results: dict  exp_name -> {"train_acc": float, "test_acc": float}
-    Genera un bar chart comparativo de todos los experimentos.
-    """
+def plot_accuracy_summary(results, output_dir, task_name="general"):
     names = list(results.keys())
     train_accs = [results[n].get("train_acc", 0) for n in names]
     test_accs  = [results[n].get("test_acc",  0) for n in names]
@@ -126,7 +122,7 @@ def plot_accuracy_summary(results, output_dir):
 
     ax.set_xlabel('Experimento')
     ax.set_ylabel('Accuracy')
-    ax.set_title('Resumen de accuracy por experimento')
+    ax.set_title(f'Resumen de accuracy por experimento ({task_name.upper()})')
     ax.set_xticks(x)
     ax.set_xticklabels(names, rotation=25, ha='right', fontsize=8)
     ax.set_ylim(0, 1.05)
@@ -139,7 +135,8 @@ def plot_accuracy_summary(results, output_dir):
                     xytext=(0, 3), textcoords="offset points", ha='center', fontsize=7)
 
     plt.tight_layout()
-    path = os.path.join(output_dir, 'accuracy_summary.png')
+    filename = f'accuracy_summary_{task_name}.png'
+    path = os.path.join(output_dir, filename)
     plt.savefig(path)
     plt.close()
-    print(f"\n[plot] Resumen de accuracy guardado en {path}")
+    print(f"\nResumen de accuracy guardado en {path}")
