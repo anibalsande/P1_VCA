@@ -73,8 +73,9 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
 
     model     = get_resnet18(num_classes=2, pretrained=pretrained).to(device)
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0001, weight_decay=0.01) # AdamW con weight decay para mejor generalización
-
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.01) # AdamW con weight decay para mejor generalización
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=15, gamma=0.5)
+    
     # Historial de métricas por epoch
     history = {'train_loss': [], 'test_loss': [], 'train_acc': [], 'test_acc': []}
 
@@ -92,7 +93,8 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
 
         print(f"Epoch {epoch+1}/{EPOCHS} | Train Loss: {train_loss:.4f} | "
               f"Train Acc: {train_metrics['accuracy']:.4f} | Test Acc: {test_metrics['accuracy']:.4f}")
-    
+
+        scheduler.step()
     # Guardado
     save_model(model, exp_name)
 
@@ -138,30 +140,6 @@ def run_all_experiments(csv_path, img_dir, task_name, all_results,
             task_name=task_name,
             all_results=all_results,
         )
- 
-
-def generate_all_plots(all_results, class_names=None):
-    print(f"\n{'='*60}")
-    print("GENERANDO GRÁFICOS...")
-    print(f"{'='*60}")
- 
-    for exp_name, data in all_results.items():
-        print(f"\n  {exp_name}")
-        metrics = data["test_metrics"]
- 
-        plot_loss(data["epoch_losses"], exp_name, OUTPUT_DIR)
-        plot_confusion_matrix(
-            metrics["all_labels"], metrics["all_preds"],
-            exp_name, OUTPUT_DIR, class_names=class_names
-        )
-        plot_roc_curve(
-            metrics["all_labels"], metrics["all_probs"],
-            exp_name, OUTPUT_DIR
-        )
-        plot_misclassified(metrics["misclassified"], exp_name, OUTPUT_DIR)
- 
-    # Gráfico resumen comparando todos los experimentos
-    plot_accuracy_summary(all_results, OUTPUT_DIR)
 
 def main():
     print(f"\nTAREA 2: Clasificación Ship / No-ship")
