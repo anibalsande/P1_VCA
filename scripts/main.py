@@ -112,9 +112,9 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
 def run_all_experiments(csv_path, img_dir, task_name, all_results,
                         show_samples=False):
     configurations = [
-        #(False, False),
-        #(True, False),
-        #(False, True),
+        (False, False),
+        (False, True),
+        (True, False),
         (True, True)
     ]
 
