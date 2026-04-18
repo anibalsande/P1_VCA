@@ -102,36 +102,47 @@ def plot_misclassified(misclassified, exp_name, output_dir):
     print(f"Errores guardados en {path}")
 
 def plot_training_curves(train_losses, train_accs, exp_name, output_dir):
-    fig, ax1 = plt.subplots(figsize=(10, 5))
+    epochs = range(1, len(train_losses) + 1)
+    
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))
+    fig.suptitle(f'Análisis de Entrenamiento — {exp_name}', fontsize=16)
 
-    color = 'tab:red'
+    # Gráfica de Loss Lineal
+    ax1.plot(epochs, train_losses, marker='o', color='tab:red', markersize=4)
+    ax1.set_title('Loss (Escala Lineal)')
     ax1.set_xlabel('Epochs')
-    ax1.set_ylabel('Train Loss (log)', color=color)
-    ax1.plot(range(1, len(train_losses) + 1), train_losses, marker='o', color=color, label='Loss')
-    ax1.tick_params(axis='y', labelcolor=color)
-    ax1.set_yscale('log')
-    ax1.grid(True, which="both", ls="--", alpha=0.5)
+    ax1.set_ylabel('Loss')
+    ax1.grid(True, ls='--', alpha=0.5)
 
-    ax2 = ax1.twinx()  
-    color = 'tab:blue'
-    ax2.set_ylabel('Train Accuracy', color=color)
-    ax2.plot(range(1, len(train_accs) + 1), train_accs, marker='s', color=color, label='Accuracy')
-    ax2.tick_params(axis='y', labelcolor=color)
-    ax2.set_ylim([0, 1.05])
+    # Gráfica de Loss Logarítmica
+    ax2.plot(epochs, train_losses, marker='o', color='tab:orange', markersize=4)
+    ax2.set_yscale('log')
+    ax2.set_title('Loss (Escala Logarítmica)')
+    ax2.set_xlabel('Epochs')
+    ax2.set_ylabel('Loss (log)')
+    ax2.grid(True, which="both", ls='--', alpha=0.5)
 
-    fig.tight_layout()
-    plt.title(f'Training Curves — {exp_name}')
-    path = os.path.join(output_dir, f'training_curves.png')
+    # Gráfica de Accuracy
+    ax3.plot(epochs, train_accs, marker='s', color='tab:blue', markersize=4)
+    ax3.set_title('Accuracy de Entrenamiento')
+    ax3.set_xlabel('Epochs')
+    ax3.set_ylabel('Accuracy')
+    ax3.set_ylim([0, 1.05])
+    ax3.grid(True, ls='--', alpha=0.5)
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    
+    path = os.path.join(output_dir, 'training_analysis_summary.png')
     plt.savefig(path)
     plt.close()
-    print(f"Curvas de entrenamiento guardadas en {path}")
+    print(f"Curvas de entrenamiento guardadas en: {path}")
 
 
 def generate_evaluation_plots(metrics, exp_name, output_dir):
     plot_confusion_matrix(metrics["all_labels"], metrics["all_preds"], exp_name, output_dir)
     plot_roc_curve(metrics["all_labels"], metrics["all_probs"], exp_name, output_dir)
     plot_misclassified(metrics["misclassified"], exp_name, output_dir)
-    
+
 def plot_accuracy_summary(results, output_dir, task_name="general"):
     names = list(results.keys())
     train_accs = [results[n].get("train_acc", 0) for n in names]
