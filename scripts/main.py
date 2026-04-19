@@ -1,10 +1,8 @@
 import os
 import random
 import numpy as np
-import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Subset
-import matplotlib.pyplot as plt
 
 
 from dataset import PortDataset
@@ -17,7 +15,7 @@ from evaluate import evaluate
 from plots import *
 
 # Configuración general
-SEED       = 42
+SEED       = 12
 EPOCHS     = 60
 BATCH_SIZE = 32
 OUTPUT_DIR = '../results'
@@ -92,9 +90,9 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
 
 def run_all_experiments(csv_path, img_dir, task_name, all_results):
     configurations = [
-        #(False, False),
+        (False, False),
         (False, True),
-        #(True, False),
+        (True, False),
         (True, True)
     ]
 
