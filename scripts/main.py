@@ -55,7 +55,7 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
 
     model     = get_resnet18(num_classes=2, pretrained=pretrained).to(device)
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5, weight_decay=0.01) # AdamW con weight decay para mejor generalización
+    optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5, weight_decay=0.01) # AdamW con weight decay para mejor generalización
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
     
     # Historial de métricas por epoch
