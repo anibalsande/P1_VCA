@@ -10,7 +10,6 @@ base_transform = t.Compose([
 
 aug_transform = t.Compose([
     t.Resize((224, 224)),
-    #t.RandomAffine(degrees=10, scale=(0.9, 1.1), fill=128),
     t.RandomHorizontalFlip(p=0.5),
     t.ColorJitter(brightness=0.2, contrast=0.2),
     t.ToTensor(),

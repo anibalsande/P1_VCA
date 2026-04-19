@@ -17,7 +17,7 @@ from evaluate import evaluate
 from plots import *
 
 # Configuración general
-SEED       = 12
+SEED       = 42
 EPOCHS     = 60
 BATCH_SIZE = 32
 OUTPUT_DIR = '../results'
