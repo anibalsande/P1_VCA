@@ -18,7 +18,7 @@ from plots import *
 
 # Configuración general
 SEED       = 12
-EPOCHS     = 80
+EPOCHS     = 60
 BATCH_SIZE = 32
 OUTPUT_DIR = '../results'
 MODELS_DIR = os.path.join(OUTPUT_DIR, "models")
