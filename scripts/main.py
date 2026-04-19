@@ -166,9 +166,9 @@ def main():
     plot_accuracy_summary(docked_results, OUTPUT_DIR, task_name="docked")
 
     # Resumen final por consola separado
-    print("\nRESUMEN FINAL - SHIP")
-    for exp, data in ship_results.items():
-        print(f"{exp:<35} Train: {data['train_acc']:.4f} | Test: {data['test_acc']:.4f}")
+    # print("\nRESUMEN FINAL - SHIP")
+    # for exp, data in ship_results.items():
+    #     print(f"{exp:<35} Train: {data['train_acc']:.4f} | Test: {data['test_acc']:.4f}")
         
     print("\nRESUMEN FINAL - DOCKED")
     for exp, data in docked_results.items():
