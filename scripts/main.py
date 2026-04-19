@@ -102,7 +102,7 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
     # Evaluación final en test
     print("\nEvaluación en Test:")
     test_metrics = evaluate(model, test_loader, device)
-    
+    print(f"Test Accuracy: {test_metrics['accuracy']:.4f}")
     generate_evaluation_plots(test_metrics, exp_name, exp_dir)
 
     all_results[exp_name] = {
