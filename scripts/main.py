@@ -18,7 +18,7 @@ from plots import *
 
 # Configuración general
 SEED       = 12
-EPOCHS     = 100
+EPOCHS     = 60
 BATCH_SIZE = 32
 OUTPUT_DIR = '../results'
 MODELS_DIR = os.path.join(OUTPUT_DIR, "models")
@@ -29,27 +29,6 @@ torch.manual_seed(SEED)
  
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
-
-
-def visualize_samples(dataset, num_samples=5):
-    """Muestra num_samples imágenes del dataset con sus etiquetas."""
-    mean = np.array([0.485, 0.456, 0.406])
-    std  = np.array([0.229, 0.224, 0.225])
- 
-    indices = random.sample(range(len(dataset)), min(num_samples, len(dataset)))
-    plt.figure(figsize=(15, 4))
-    for i, idx in enumerate(indices):
-        image, label, name = dataset[idx]
-        img = image.permute(1, 2, 0).numpy() * std + mean
-        img = np.clip(img, 0, 1)
-        plt.subplot(1, len(indices), i + 1)
-        plt.imshow(img)
-        plt.title(f"Label: {label.item()}\n{os.path.basename(name)[:15]}")
-        plt.axis('off')
-    plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, "sample_images.png"))
-    plt.show()
-    print(f"Muestra de imágenes guardada en {OUTPUT_DIR}/sample_images.png")
 
 
 def save_model(model, exp_name):
@@ -140,18 +119,18 @@ def run_all_experiments(csv_path, img_dir, task_name, all_results):
 
 
 def main():
-    # print(f"\nTAREA 2: Clasificación Ship / No-ship")
-    # ship_results = {}
+    print(f"\nTAREA 2: Clasificación Ship / No-ship")
+    ship_results = {}
  
-    # run_all_experiments(
-    #     csv_path="../P1-Material/ship.csv",
-    #     img_dir="../P1-Material/images",
-    #     task_name="ship",
-    #     all_results=ship_results,
-    # )
+    run_all_experiments(
+        csv_path="../P1-Material/ship.csv",
+        img_dir="../P1-Material/images",
+        task_name="ship",
+        all_results=ship_results,
+    )
  
-    # # Gráfico resumen para los experimentos de Ship
-    # plot_accuracy_summary(ship_results, OUTPUT_DIR, task_name="ship")
+    # Gráfico resumen para los experimentos de Ship
+    plot_accuracy_summary(ship_results, OUTPUT_DIR, task_name="ship")
 
     # TAREA 4 (opcional): Clasificación Docked / Undocked
     print(f"\nTAREA 4: Clasificación Docked / Undocked")
@@ -166,9 +145,9 @@ def main():
     plot_accuracy_summary(docked_results, OUTPUT_DIR, task_name="docked")
 
     # Resumen final por consola separado
-    # print("\nRESUMEN FINAL - SHIP")
-    # for exp, data in ship_results.items():
-    #     print(f"{exp:<35} Train: {data['train_acc']:.4f} | Test: {data['test_acc']:.4f}")
+    print("\nRESUMEN FINAL - SHIP")
+    for exp, data in ship_results.items():
+        print(f"{exp:<35} Train: {data['train_acc']:.4f} | Test: {data['test_acc']:.4f}")
         
     print("\nRESUMEN FINAL - DOCKED")
     for exp, data in docked_results.items():
