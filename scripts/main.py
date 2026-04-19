@@ -50,8 +50,8 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    test_loader  = DataLoader(test_dataset,  batch_size=BATCH_SIZE, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
+    test_loader  = DataLoader(test_dataset,  batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
 
     model     = get_resnet18(num_classes=2, pretrained=pretrained).to(device)
     criterion = torch.nn.CrossEntropyLoss()
