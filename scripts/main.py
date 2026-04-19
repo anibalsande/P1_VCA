@@ -18,7 +18,7 @@ from plots import *
 
 # Configuración general
 SEED       = 12
-EPOCHS     = 50
+EPOCHS     = 100
 BATCH_SIZE = 32
 OUTPUT_DIR = '../results'
 MODELS_DIR = os.path.join(OUTPUT_DIR, "models")
@@ -76,7 +76,7 @@ def run_experiment(pretrained, augmentation, train_dataset, test_dataset,
 
     model     = get_resnet18(num_classes=2, pretrained=pretrained).to(device)
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5, weight_decay=0.01) # AdamW con weight decay para mejor generalización
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.01) # AdamW con weight decay para mejor generalización
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=15, gamma=0.5)
     
     # Historial de métricas por epoch
@@ -140,18 +140,18 @@ def run_all_experiments(csv_path, img_dir, task_name, all_results):
 
 
 def main():
-    print(f"\nTAREA 2: Clasificación Ship / No-ship")
-    ship_results = {}
+    # print(f"\nTAREA 2: Clasificación Ship / No-ship")
+    # ship_results = {}
  
-    run_all_experiments(
-        csv_path="../P1-Material/ship.csv",
-        img_dir="../P1-Material/images",
-        task_name="ship",
-        all_results=ship_results,
-    )
+    # run_all_experiments(
+    #     csv_path="../P1-Material/ship.csv",
+    #     img_dir="../P1-Material/images",
+    #     task_name="ship",
+    #     all_results=ship_results,
+    # )
  
-    # Gráfico resumen para los experimentos de Ship
-    plot_accuracy_summary(ship_results, OUTPUT_DIR, task_name="ship")
+    # # Gráfico resumen para los experimentos de Ship
+    # plot_accuracy_summary(ship_results, OUTPUT_DIR, task_name="ship")
 
     # TAREA 4 (opcional): Clasificación Docked / Undocked
     print(f"\nTAREA 4: Clasificación Docked / Undocked")

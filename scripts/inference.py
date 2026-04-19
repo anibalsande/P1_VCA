@@ -8,12 +8,6 @@ Uso típico (defensa de la práctica):
         --img_dir /ruta/a/las/imagenes \\
         --task    ship
 
-Argumentos:
-    --model    Ruta al archivo .pth guardado durante el entrenamiento.
-    --csv      CSV del dataset de test (mismo formato que ship.csv / docked.csv).
-    --img_dir  Directorio que contiene las imágenes del test.
-    --task     Nombre descriptivo del experimento (solo para nombrar los gráficos).
-    --output   (opcional) Carpeta donde guardar los gráficos. Por defecto: inference_results/
 """
 
 import os
@@ -34,7 +28,7 @@ def load_model(model_path, device, num_classes=2):
     model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
-    print(f"[inference] Modelo cargado desde: {model_path}")
+    print(f"Modelo cargado desde: {model_path}")
     return model
 
 
@@ -42,18 +36,17 @@ def run_inference(model_path, csv_path, img_dir, task_name, output_dir, num_clas
     os.makedirs(output_dir, exist_ok=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"[inference] Dispositivo: {device}")
 
     model = load_model(model_path, device, num_classes=num_classes)
 
     dataset = PortDataset(img_dir, csv_path, transform=base_transform)
     loader  = DataLoader(dataset, batch_size=32, shuffle=False, num_workers=0)
 
-    print(f"[inference] Evaluando {len(dataset)} imágenes...")
+    print(f"Evaluando {len(dataset)} imágenes:")
     metrics = evaluate(model, loader, device)
 
     acc = metrics["accuracy"]
-    print(f"\n[inference] Resultados sobre '{task_name}':")
+    print(f"\nResultados sobre '{task_name}':")
     print(f"  Accuracy : {acc:.4f} ({acc*100:.2f}%)")
 
     # Métricas por clase
@@ -74,13 +67,9 @@ def run_inference(model_path, csv_path, img_dir, task_name, output_dir, num_clas
                    exp_name, output_dir)
     plot_misclassified(metrics["misclassified"], exp_name, output_dir)
 
-    print(f"\n[inference] Gráficos guardados en: {output_dir}/")
+    print(f"\nGráficos guardados en: {output_dir}/")
     return metrics
 
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Evalúa un modelo entrenado sobre un dataset de test externo."
