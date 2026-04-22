@@ -1,8 +1,3 @@
-"""
-plots.py — Funciones de visualización.
-Se llaman al final de todos los experimentos, no durante el entrenamiento.
-"""
-
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -163,7 +158,6 @@ def plot_accuracy_summary(results, output_dir, task_name="general"):
     ax.set_ylim(0, 1.05)
     ax.legend()
 
-    # Añadir valor encima de cada barra
     for bar in list(bars1) + list(bars2):
         h = bar.get_height()
         ax.annotate(f'{h:.2f}', xy=(bar.get_x() + bar.get_width() / 2, h),
